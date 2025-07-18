@@ -1,5 +1,11 @@
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    // imports
+    const db = window.db;
+    const { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } = window.firebaseFirestore;
+
+    
     const todoForm = document.getElementById('todo-form'); 
     const taskInput = document.getElementById('task-input'); 
     const taskContainer = document.getElementById("tasks"); 
@@ -27,9 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try{
             const querySnapshot = await getDocs(filtered_tasks);
-            const tasks = querySnapshot.docs.map(doc => ({
-                id: doc.id, 
-                ...doc.data()
+            const tasks = querySnapshot.docs.map(docData => ({
+                id: docData.id, 
+                ...docData.data()
             }));
         
 
