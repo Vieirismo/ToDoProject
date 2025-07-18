@@ -1,24 +1,68 @@
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "firebase/firestore";
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Seleção de elementos HTML
     const todoForm = document.getElementById('todo-form'); 
     const taskInput = document.getElementById('task-input'); 
-    const add_btn = document.getElementById("add-button");
     const taskContainer = document.getElementById("tasks"); 
 
     const all_btn = document.getElementById('all-button');
     const active_btn = document.getElementById('active-button');
     const finished_btn = document.getElementById('finished-button');
 
-   
-    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    const tasksCollectionRef = collection(db, 'tasks');
+
+    // let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
     let current_filter = 'all'; 
 
-  
-    const saveTasks = () => {
-        localStorage.setItem('tasks', JSON.stringify(tasks));
+    //const saveTasks = () => {
+    //    localStorage.setItem('tasks', JSON.stringify(tasks));
+    //};
+
+    const load_tasks = async () => {
+        taskContainer.innerHTML = ''; 
+        let filtered_tasks = tasksCollectionRef;
+
+     
+        if (current_filter === 'active') {
+            filtered_tasks = query(tasksCollectionRef, where('finished', '==', false))
+        } else if (current_filter === 'finished') {
+            filtered_tasks = query(tasksCollectionRef, where('finished', '==', true))
+        }
+
+        try{
+            const querySnapshot = await getDocs(filtered_tasks);
+            const tasks = querySnapshot.docs.map(doc => ({
+                id: doc.id, 
+                ...doc.data()
+            }));
+        
+
+        if (tasks.length === 0 && current_filter === 'all') {
+            const no_tasks_msg = document.createElement("h3");
+            no_tasks_msg.textContent = "Nenhuma tarefa criada ainda!";
+            no_tasks_msg.style.textAlign = 'center';
+            no_tasks_msg.style.color = 'black';
+            taskContainer.appendChild(no_tasks_msg);
+            return;
+        } else if (tasks.length === 0) {
+            const no_tasks_msg = document.createElement("h3");
+            no_tasks_msg.textContent = `Nenhuma tarefa ${current_filter === 'active' ? 'ativa' : 'concluída'} encontrada.`;
+            no_tasks_msg.style.textAlign = 'center';
+            no_tasks_msg.style.color = 'black';
+            taskContainer.appendChild(no_tasks_msg);
+            return;
+        }
+
+      
+        tasks.forEach(task => { 
+            createTasks(task);
+        });
+        }catch(err){
+            console.error("Erro ao carregar tarefas: ", err);
+        }
     };
 
-   
     const createTasks = (task) => { 
         const taskDiv = document.createElement('li');
         taskDiv.classList.add("task");
@@ -56,71 +100,46 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     
-    const load_tasks = () => {
-        taskContainer.innerHTML = ''; 
-        let filtered_tasks = tasks;
-
-     
-        if (current_filter === 'active') {
-            filtered_tasks = tasks.filter(task => !task.finished);
-        } else if (current_filter === 'finished') {
-            filtered_tasks = tasks.filter(task => task.finished);
+    const toggleComplete = async (id, currentStatus) => {
+        const taskDocRef = doc(db, 'tasks', id);
+        try {
+            await updateDoc(taskDocRef, {
+                finished: !currentStatus
+            });
+            load_tasks(); 
+        } catch (err) {
+            console.error("Erro ao atualizar tarefa: ", err);
         }
-
-
-        if (filtered_tasks.length === 0 && current_filter === 'all') {
-            const no_tasks_msg = document.createElement("h3");
-            no_tasks_msg.textContent = "Nenhuma tarefa criada ainda!";
-            no_tasks_msg.style.textAlign = 'center';
-            no_tasks_msg.style.color = 'black';
-            taskContainer.appendChild(no_tasks_msg);
-            return;
-        } else if (filtered_tasks.length === 0) {
-            const no_tasks_msg = document.createElement("h3");
-            no_tasks_msg.textContent = `Nenhuma tarefa ${current_filter === 'active' ? 'ativa' : 'concluída'} encontrada.`;
-            no_tasks_msg.style.textAlign = 'center';
-            no_tasks_msg.style.color = 'black';
-            taskContainer.appendChild(no_tasks_msg);
-            return;
-        }
-
-      
-        filtered_tasks.forEach(task => { 
-            createTasks(task);
-        });
-    };
-
+    }
     
-    const toggleComplete = (id) => {
-        tasks = tasks.map(task =>
-            task.id === id ? { ...task, finished: !task.finished } : task 
-        );
-        saveTasks();
-        load_tasks(); 
-    };
-
    
-    const deleteTask = (id) => {
-        tasks = tasks.filter(task => task.id !== id);
-        saveTasks();
-        load_tasks(); 
+    const deleteTask = async (id) => {
+        const taskDocRef = doc(db,'tasks', id);
+        try{
+            await deleteDoc(taskDocRef);
+            load_tasks();
+        }catch(err){
+            console.error("Erro ao deletar tarefa: ",err)
+        }
     };
 
 
-    todoForm.addEventListener('submit', (e) => {
+    todoForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         const text = taskInput.value.trim(); 
 
         if (text) { 
-            const newTask = {
-                id: Date.now(), 
-                text: text,
-                finished: false
-            };
-            tasks.push(newTask); 
-            saveTasks();
-            taskInput.value = ''; 
-            load_tasks(); 
+            try{
+                await addDoc(tasksCollectionRef,{
+                    text: text,
+                    finished: false,
+                    createAt: new Date()
+                });
+                taskInput.value = ''; 
+                load_tasks(); 
+            }catch(err){
+                console.error("Erro ao adicionar tarefa: ", err)
+            }
         }
     });
 
