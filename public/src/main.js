@@ -1,4 +1,3 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "firebase/firestore";
 
 document.addEventListener('DOMContentLoaded', () => {
     const todoForm = document.getElementById('todo-form'); 
@@ -11,13 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tasksCollectionRef = collection(db, 'tasks');
 
-    // let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
     let current_filter = 'all'; 
 
-    //const saveTasks = () => {
-    //    localStorage.setItem('tasks', JSON.stringify(tasks));
-    //};
 
     const load_tasks = async () => {
         taskContainer.innerHTML = ''; 

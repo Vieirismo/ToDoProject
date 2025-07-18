@@ -1,6 +1,5 @@
-
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 
 const firebaseConfig = {
@@ -14,4 +13,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app); // Initial example 
+const db = getFirestore(app);
+
+
+window.db = db;
+window.firebaseFirestore = { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where };
