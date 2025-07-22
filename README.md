@@ -1,2 +1,2 @@
 # ToDoProject
-A small task manager project. It's in its early stages.
+A small task manager project. It's in the early stages.
